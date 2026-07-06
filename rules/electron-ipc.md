@@ -161,3 +161,9 @@ When creating hooks/components that call IPC handlers:
 - Wrap writes in `useMutation`; validate inputs locally, call the domain client, and invalidate related queries on success. Use shared utilities (e.g., toast helpers) in `onError`.
 - Synchronize TanStack Query data with any global state (like Jotai atoms) via `useEffect` only if required.
 - For renderer launch telemetry that needs first-run state, do not infer it from `settings.hasRunBefore` after startup. `onFirstRunMaybe` flips that setting before `createWindow()`, so expose the pre-write value through an IPC/query context instead.
+
+## Unit-testing IPC handlers with the harness
+
+`src/testing/handler_test_harness.ts` (`setupHandlerTestHarness` + `harness.invokeHandler("channel", input)`) gives you a real in-memory DB and works even for heavyweight modules: `registerAppHandlers` loads in vitest with just `vi.mock("electron")` plus module mocks for `@/paths/paths` (point `getDyadAppPath` at a temp dir), `@/ipc/services/git_service`, `createFromTemplate`, `gitignoreUtils`, and `chat_mode_resolution`.
+
+- Only handlers registered via `createTypedHandler` land in the harness registry. Handlers registered with `createLoggedHandler`/`handle(...)` (e.g. `import_handlers.ts`) must be captured through the mocked `ipcMain.handle` — and their return value is an IPC envelope shaped `{ ok, value, error }` (NOT `{ success, data }`), so unwrap accordingly.
