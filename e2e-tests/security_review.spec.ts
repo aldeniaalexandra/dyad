@@ -175,7 +175,13 @@ test("security review - multi-select reuses fix chat for same selection", async 
   // A different selection creates a new fix chat
   await checkboxes.nth(3).click();
   await po.page.getByRole("button", { name: "Fix 1 Issue" }).click();
-  await po.chatActions.waitForChatCompletion();
+  await expect(async () => {
+    const text = await po.page.getByTestId("messages-list").textContent();
+    expect(text).toMatch(/Please fix the following security issue/);
+  }).toPass({ timeout: Timeout.MEDIUM });
+  await expect(
+    po.page.getByRole("button", { name: "Fixing Issue..." }),
+  ).toHaveCount(0, { timeout: Timeout.MEDIUM });
   await expect(async () => {
     expect(await closeButtons.count()).toBe(4);
   }).toPass({ timeout: Timeout.MEDIUM });
